@@ -2,13 +2,14 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nawras Alabbadi - Games</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            touch-action: manipulation; /* تحسين استجابة اللمس */
         }
 
         body {
@@ -16,6 +17,7 @@
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #fff;
             min-height: 100vh;
+            user-select: none; /* منع تحديد النصوص أثناء اللعب */
         }
 
         nav {
@@ -43,6 +45,7 @@
             max-width: 1200px;
             margin: 3rem auto;
             padding: 0 2rem;
+            padding-bottom: 5rem;
         }
 
         h1 {
@@ -120,6 +123,7 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .game-canvas.active {
@@ -128,52 +132,107 @@
 
         canvas {
             background: #000;
-            border: 4px solid #ffd700;
-            border-radius: 15px;
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            max-width: 100%;
+            max-height: 70vh; /* ترك مساحة للأزرار */
         }
 
         .close-game {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             background: #ff4444;
             color: white;
             border: none;
-            padding: 1rem 2rem;
+            padding: 0.8rem 1.5rem;
             border-radius: 50px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             z-index: 1001;
-        }
-
-        .close-game:hover {
-            background: #cc0000;
-            transform: scale(1.1);
         }
 
         .game-info {
             color: white;
             text-align: center;
-            margin-top: 1.5rem;
-            font-size: 1.3rem;
+            margin-top: 10px;
+            font-size: 1.2rem;
             background: rgba(0, 0, 0, 0.5);
-            padding: 1rem 2rem;
+            padding: 5px 15px;
             border-radius: 20px;
         }
 
         .score {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #ffd700;
         }
 
+        /* --- Mobile Controls Styles --- */
+        .controls-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            width: 100%;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50%;
+            color: #ffd700;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 215, 0, 0.5);
+            color: #000;
+            transform: scale(0.95);
+        }
+
+        /* D-Pad Styling for Snake */
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            align-items: center;
+        }
+        .d-pad button:nth-child(1) { grid-column: 2; } /* Up */
+        .d-pad button:nth-child(2) { grid-column: 1; } /* Left */
+        .d-pad button:nth-child(3) { grid-column: 3; } /* Right */
+        .d-pad button:nth-child(4) { grid-column: 2; } /* Down */
+
+        /* Car Controls */
+        .car-controls {
+            display: flex;
+            gap: 50px;
+        }
+        .big-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 30px;
+        }
+
         @media (max-width: 768px) {
             canvas {
-                max-width: 90%;
-                max-height: 60%;
+                max-width: 95%;
             }
+            h1 { font-size: 1.8rem; }
+            .logo { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -197,7 +256,7 @@
             <div class="game-card" onclick="startPlaneGame()">
                 <div class="game-icon">✈️</div>
                 <h2>طيارات وكذا</h2>
-                <p>احذر بس </p>
+                <p>احذر بس (اسحب بإصبعك)</p>
                 <button class="play-button">انطلق 🚀</button>
             </div>
 
@@ -210,33 +269,40 @@
         </div>
     </div>
 
-    <!-- Snake Game -->
     <div id="snakeGame" class="game-canvas">
         <button class="close-game" onclick="closeGame('snakeGame')">إغلاق ✖</button>
-        <canvas id="snakeCanvas" width="500" height="500"></canvas>
+        <canvas id="snakeCanvas" width="350" height="350"></canvas>
         <div class="game-info">
             <div>النقاط: <span class="score" id="snakeScore">0</span></div>
-            <div style="margin-top: 0.5rem;">⬆️⬇️⬅️➡️ للتحكم</div>
+        </div>
+        <div class="controls-area">
+            <div class="d-pad">
+                <div class="control-btn" id="sUp">⬆️</div>
+                <div class="control-btn" id="sLeft">⬅️</div>
+                <div class="control-btn" id="sRight">➡️</div>
+                <div class="control-btn" id="sDown">⬇️</div>
+            </div>
         </div>
     </div>
 
-    <!-- Plane Game -->
     <div id="planeGame" class="game-canvas">
         <button class="close-game" onclick="closeGame('planeGame')">إغلاق ✖</button>
-        <canvas id="planeCanvas" width="500" height="700"></canvas>
+        <canvas id="planeCanvas" width="350" height="500"></canvas>
         <div class="game-info">
             <div>النقاط: <span class="score" id="planeScore">0</span></div>
-            <div style="margin-top: 0.5rem;">🖱️ الماوس + نقر للإطلاق</div>
+            <div style="font-size: 0.9rem;">اسحب الطائرة بإصبعك - انقر للإطلاق</div>
         </div>
     </div>
 
-    <!-- Car Game -->
     <div id="carGame" class="game-canvas">
         <button class="close-game" onclick="closeGame('carGame')">إغلاق ✖</button>
-        <canvas id="carCanvas" width="450" height="700"></canvas>
+        <canvas id="carCanvas" width="350" height="500"></canvas>
         <div class="game-info">
             <div>النقاط: <span class="score" id="carScore">0</span></div>
-            <div style="margin-top: 0.5rem;">⬅️➡️ للتحكم</div>
+        </div>
+        <div class="controls-area car-controls">
+            <div class="control-btn big-btn" id="cLeft">⬅️</div>
+            <div class="control-btn big-btn" id="cRight">➡️</div>
         </div>
     </div>
 
@@ -251,6 +317,13 @@
             }
         }
 
+        // Helper to prevent default touch behavior (scrolling)
+        function preventTouchScroll(e) {
+            if(e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+        }
+
         // ===== SNAKE GAME =====
         function startSnakeGame() {
             document.getElementById('snakeGame').classList.add('active');
@@ -258,64 +331,49 @@
             const ctx = canvas.getContext('2d');
             const scoreEl = document.getElementById('snakeScore');
             
-            const gridSize = 25;
-            let snake = [{x: 250, y: 250}];
-            let dx = gridSize;
+            const gridSize = 20; // صغرنا الحجم قليلا ليناسب الجوال
+            const tileCount = canvas.width / gridSize;
+
+            let snake = [{x: 10, y: 10}];
+            let dx = 0;
             let dy = 0;
-            let food = {x: 0, y: 0};
+            let food = {x: 15, y: 15};
             let score = 0;
             let gameLoop;
             
             function generateFood() {
-                food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
-                food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+                food.x = Math.floor(Math.random() * tileCount);
+                food.y = Math.floor(Math.random() * tileCount);
             }
-            
-            generateFood();
             
             function draw() {
                 ctx.fillStyle = '#0a0e27';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Grid
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                for(let i = 0; i < canvas.width; i += gridSize) {
-                    ctx.beginPath();
-                    ctx.moveTo(i, 0);
-                    ctx.lineTo(i, canvas.height);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(0, i);
-                    ctx.lineTo(canvas.width, i);
-                    ctx.stroke();
-                }
-                
                 // Snake
                 snake.forEach((seg, i) => {
                     ctx.fillStyle = i === 0 ? '#00ff88' : '#00cc66';
-                    ctx.fillRect(seg.x + 2, seg.y + 2, gridSize - 4, gridSize - 4);
+                    ctx.fillRect(seg.x * gridSize, seg.y * gridSize, gridSize - 2, gridSize - 2);
                 });
                 
                 // Food
                 ctx.fillStyle = '#ff4444';
                 ctx.beginPath();
-                ctx.arc(food.x + gridSize/2, food.y + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+                ctx.arc((food.x * gridSize) + gridSize/2, (food.y * gridSize) + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
                 ctx.fill();
             }
             
             function update() {
                 const head = {x: snake[0].x + dx, y: snake[0].y + dy};
                 
-                if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-                    alert('انتهت اللعبة! النقاط: ' + score);
-                    closeGame('snakeGame');
+                if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                    gameOver();
                     return;
                 }
                 
                 for (let seg of snake) {
                     if (head.x === seg.x && head.y === seg.y) {
-                        alert('انتهت اللعبة! النقاط: ' + score);
-                        closeGame('snakeGame');
+                        gameOver();
                         return;
                     }
                 }
@@ -332,15 +390,41 @@
                 
                 draw();
             }
+
+            function gameOver() {
+                alert('انتهت اللعبة! النقاط: ' + score);
+                closeGame('snakeGame');
+            }
             
+            // Keyboard Controls
             document.onkeydown = function(e) {
-                if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -gridSize; }
-                if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = gridSize; }
-                if (e.key === 'ArrowLeft' && dx === 0) { dx = -gridSize; dy = 0; }
-                if (e.key === 'ArrowRight' && dx === 0) { dx = gridSize; dy = 0; }
+                switch(e.key) {
+                    case 'ArrowUp': if(dy===0) { dx=0; dy=-1; } break;
+                    case 'ArrowDown': if(dy===0) { dx=0; dy=1; } break;
+                    case 'ArrowLeft': if(dx===0) { dx=-1; dy=0; } break;
+                    case 'ArrowRight': if(dx===0) { dx=1; dy=0; } break;
+                }
             };
+
+            // Touch Controls
+            const btnUp = document.getElementById('sUp');
+            const btnDown = document.getElementById('sDown');
+            const btnLeft = document.getElementById('sLeft');
+            const btnRight = document.getElementById('sRight');
+
+            // Add touchstart listeners
+            btnUp.ontouchstart = (e) => { e.preventDefault(); if(dy===0) { dx=0; dy=-1; } };
+            btnDown.ontouchstart = (e) => { e.preventDefault(); if(dy===0) { dx=0; dy=1; } };
+            btnLeft.ontouchstart = (e) => { e.preventDefault(); if(dx===0) { dx=-1; dy=0; } };
+            btnRight.ontouchstart = (e) => { e.preventDefault(); if(dx===0) { dx=1; dy=0; } };
+
+            // Add click listeners for mouse users on buttons
+            btnUp.onclick = () => { if(dy===0) { dx=0; dy=-1; } };
+            btnDown.onclick = () => { if(dy===0) { dx=0; dy=1; } };
+            btnLeft.onclick = () => { if(dx===0) { dx=-1; dy=0; } };
+            btnRight.onclick = () => { if(dx===0) { dx=1; dy=0; } };
             
-            gameLoop = setInterval(update, 100);
+            gameLoop = setInterval(update, 150);
             currentGame = { stop: () => clearInterval(gameLoop) };
         }
 
@@ -351,32 +435,51 @@
             const ctx = canvas.getContext('2d');
             const scoreEl = document.getElementById('planeScore');
             
-            let plane = { x: canvas.width / 2 - 20, y: canvas.height - 100, width: 40, height: 40 };
+            let plane = { x: canvas.width / 2 - 20, y: canvas.height - 80, width: 40, height: 40 };
             let enemies = [];
             let bullets = [];
             let coins = [];
             let score = 0;
             let gameLoop;
             
-            canvas.onmousemove = e => {
+            function movePlane(clientX, clientY) {
                 const rect = canvas.getBoundingClientRect();
-                plane.x = e.clientX - rect.left - plane.width / 2;
-                plane.y = e.clientY - rect.top - plane.height / 2;
+                plane.x = clientX - rect.left - plane.width / 2;
+                plane.y = clientY - rect.top - plane.height / 2;
                 plane.x = Math.max(0, Math.min(canvas.width - plane.width, plane.x));
                 plane.y = Math.max(0, Math.min(canvas.height - plane.height, plane.y));
+            }
+
+            // Mouse Movement
+            canvas.onmousemove = e => {
+                movePlane(e.clientX, e.clientY);
+            };
+
+            // Touch Movement
+            canvas.ontouchmove = e => {
+                e.preventDefault(); // Stop scrolling
+                movePlane(e.touches[0].clientX, e.touches[0].clientY);
             };
             
-            canvas.onclick = () => {
+            function shoot() {
                 bullets.push({
                     x: plane.x + plane.width/2 - 2,
                     y: plane.y,
                     width: 4,
                     height: 15
                 });
+            }
+
+            canvas.onclick = shoot;
+            // Shoot on tap (but distinguish from drag start)
+            canvas.ontouchstart = (e) => {
+                e.preventDefault();
+                movePlane(e.touches[0].clientX, e.touches[0].clientY); // Jump to finger immediately
+                shoot();
             };
             
             function spawnEnemy() {
-                if (Math.random() < 0.02) {
+                if (Math.random() < 0.03) {
                     enemies.push({
                         x: Math.random() * (canvas.width - 40),
                         y: -50,
@@ -387,7 +490,7 @@
             }
             
             function spawnCoin() {
-                if (Math.random() < 0.015) {
+                if (Math.random() < 0.02) {
                     coins.push({
                         x: Math.random() * (canvas.width - 20),
                         y: -20,
@@ -403,10 +506,8 @@
                 
                 // Stars
                 ctx.fillStyle = '#fff';
-                for(let i = 0; i < 50; i++) {
-                    const x = (i * 137) % canvas.width;
-                    const y = (i * 73) % canvas.height;
-                    ctx.fillRect(x, y, 2, 2);
+                for(let i = 0; i < 30; i++) {
+                    ctx.fillRect((i * 137) % canvas.width, (i * 73) % canvas.height, 2, 2);
                 }
                 
                 // Plane
@@ -420,15 +521,11 @@
                 
                 // Bullets
                 ctx.fillStyle = '#ffff00';
-                bullets.forEach(b => {
-                    ctx.fillRect(b.x, b.y, b.width, b.height);
-                });
+                bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
                 
                 // Enemies
                 ctx.fillStyle = '#ff0000';
-                enemies.forEach(e => {
-                    ctx.fillRect(e.x, e.y, e.width, e.height);
-                });
+                enemies.forEach(e => ctx.fillRect(e.x, e.y, e.width, e.height));
                 
                 // Coins
                 ctx.fillStyle = '#ffd700';
@@ -485,7 +582,7 @@
             }
             
             gameLoop = setInterval(update, 1000/60);
-            currentGame = { stop: () => clearInterval(gameLoop) };
+            currentGame = { stop: () => { clearInterval(gameLoop); canvas.ontouchmove = null; canvas.ontouchstart = null; } };
         }
 
         // ===== CAR GAME =====
@@ -495,7 +592,7 @@
             const ctx = canvas.getContext('2d');
             const scoreEl = document.getElementById('carScore');
             
-            let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80 };
+            let car = { x: canvas.width / 2 - 25, y: canvas.height - 100, width: 50, height: 80 };
             let obstacles = [];
             let nitros = [];
             let score = 0;
@@ -506,10 +603,31 @@
             
             document.onkeydown = e => keys[e.key] = true;
             document.onkeyup = e => keys[e.key] = false;
+
+            // Touch Controls for Car
+            const btnLeft = document.getElementById('cLeft');
+            const btnRight = document.getElementById('cRight');
+
+            function handlePress(key, state) {
+                keys[key] = state;
+            }
+
+            btnLeft.ontouchstart = (e) => { e.preventDefault(); keys['ArrowLeft'] = true; btnLeft.style.background = 'rgba(255,215,0,0.5)'; };
+            btnLeft.ontouchend = (e) => { e.preventDefault(); keys['ArrowLeft'] = false; btnLeft.style.background = ''; };
+            
+            btnRight.ontouchstart = (e) => { e.preventDefault(); keys['ArrowRight'] = true; btnRight.style.background = 'rgba(255,215,0,0.5)'; };
+            btnRight.ontouchend = (e) => { e.preventDefault(); keys['ArrowRight'] = false; btnRight.style.background = ''; };
+
+            // Mouse fallback
+            btnLeft.onmousedown = () => keys['ArrowLeft'] = true;
+            btnLeft.onmouseup = () => keys['ArrowLeft'] = false;
+            btnRight.onmousedown = () => keys['ArrowRight'] = true;
+            btnRight.onmouseup = () => keys['ArrowRight'] = false;
             
             function spawnObstacle() {
-                if (Math.random() < 0.015) {
-                    const lanes = [100, 200, 300];
+                if (Math.random() < 0.02) {
+                    const laneWidth = canvas.width / 3;
+                    const lanes = [laneWidth/2, laneWidth + laneWidth/2, laneWidth*2 + laneWidth/2];
                     obstacles.push({
                         x: lanes[Math.floor(Math.random() * lanes.length)] - 25,
                         y: -80,
@@ -520,8 +638,9 @@
             }
             
             function spawnNitro() {
-                if (Math.random() < 0.008) {
-                    const lanes = [100, 200, 300];
+                if (Math.random() < 0.01) {
+                    const laneWidth = canvas.width / 3;
+                    const lanes = [laneWidth/2, laneWidth + laneWidth/2, laneWidth*2 + laneWidth/2];
                     nitros.push({
                         x: lanes[Math.floor(Math.random() * lanes.length)] - 10,
                         y: -30,
@@ -535,48 +654,40 @@
                 ctx.fillStyle = '#333';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                ctx.fillStyle = '#555';
-                ctx.fillRect(75, 0, 300, canvas.height);
-                
+                // Road markings
                 ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 4;
                 ctx.setLineDash([30, 20]);
                 roadOffset = (roadOffset + 5 * speed) % 50;
                 
-                for(let lane = 150; lane < 350; lane += 100) {
-                    ctx.beginPath();
-                    ctx.moveTo(lane, -roadOffset);
-                    ctx.lineTo(lane, canvas.height);
-                    ctx.stroke();
-                }
+                const laneWidth = canvas.width / 3;
+                ctx.beginPath();
+                ctx.moveTo(laneWidth, -roadOffset);
+                ctx.lineTo(laneWidth, canvas.height);
+                ctx.moveTo(laneWidth * 2, -roadOffset);
+                ctx.lineTo(laneWidth * 2, canvas.height);
+                ctx.stroke();
                 ctx.setLineDash([]);
                 
                 // Car
                 ctx.fillStyle = '#ff0000';
                 ctx.fillRect(car.x, car.y, car.width, car.height);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(car.x + 5, car.y + 15, 15, 20);
-                ctx.fillRect(car.x + 30, car.y + 15, 15, 20);
-                ctx.fillStyle = '#000';
-                ctx.fillRect(car.x + 10, car.y + 50, 10, 15);
-                ctx.fillRect(car.x + 30, car.y + 50, 10, 15);
+                ctx.fillStyle = '#fff'; // lights
+                ctx.fillRect(car.x + 5, car.y + 10, 10, 10);
+                ctx.fillRect(car.x + 35, car.y + 10, 10, 10);
                 
                 // Obstacles
                 ctx.fillStyle = '#0066ff';
-                obstacles.forEach(obs => {
-                    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                });
+                obstacles.forEach(obs => ctx.fillRect(obs.x, obs.y, obs.width, obs.height));
                 
                 // Nitros
                 ctx.fillStyle = '#00ff00';
-                nitros.forEach(n => {
-                    ctx.fillRect(n.x, n.y, n.width, n.height);
-                });
+                nitros.forEach(n => ctx.fillRect(n.x, n.y, n.width, n.height));
             }
             
             function update() {
-                if (keys['ArrowLeft'] && car.x > 80) car.x -= 8;
-                if (keys['ArrowRight'] && car.x < 320) car.x += 8;
+                if (keys['ArrowLeft'] && car.x > 0) car.x -= 7;
+                if (keys['ArrowRight'] && car.x < canvas.width - car.width) car.x += 7;
                 
                 score++;
                 scoreEl.textContent = Math.floor(score / 60);
@@ -588,8 +699,8 @@
                     obs.y += 5 * speed;
                     if (obs.y > canvas.height) obstacles.splice(i, 1);
                     
-                    if (car.x < obs.x + obs.width - 10 && car.x + car.width > obs.x + 10 &&
-                        car.y < obs.y + obs.height - 10 && car.y + car.height > obs.y + 10) {
+                    if (car.x < obs.x + obs.width - 5 && car.x + car.width > obs.x + 5 &&
+                        car.y < obs.y + obs.height - 5 && car.y + car.height > obs.y + 5) {
                         alert('انتهت اللعبة! النقاط: ' + Math.floor(score / 60));
                         closeGame('carGame');
                     }
